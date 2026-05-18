@@ -1,9 +1,12 @@
-﻿namespace StokTakip_Core_API.Models
+﻿using System.ComponentModel.DataAnnotations;
+
+namespace StokTakip_Core_API.Models
 {
     public class Kategoriler
     {
-        public string KategoriAdi { get; set; }
+        [Key]
+        public int KategoriID { get; set; }
 
-        public int? KategoriID { get; set; }
+        public string? KategoriAdi { get; set; }
     }
 }

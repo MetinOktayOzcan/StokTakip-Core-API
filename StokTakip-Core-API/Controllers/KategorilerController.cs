@@ -19,9 +19,9 @@ namespace StokTakip_Core_API.Controllers
         [HttpGet]
         public async Task<IActionResult> GetKategoriler()
         {
-            var kategoriler = await _context.Kategoriler.ToListAsync();
+            var Kategoriler = await _context.Kategoriler.ToListAsync();
 
-            return Ok(kategoriler);
+            return Ok(Kategoriler);
         }
     }
 }
