@@ -1,7 +1,7 @@
-@StokTakip_Core_API_HostAddress = http://localhost:5000
+@StokTakip_Core_API_HostAddress = http://localhost:5185
 
 
-GET {{StokTakip_Core_API_HostAddress}}/api/kategoriler
+GET {{StokTakip_Core_API_HostAddress}}/api/StokHareketleri
 Accept: application/json
   
 

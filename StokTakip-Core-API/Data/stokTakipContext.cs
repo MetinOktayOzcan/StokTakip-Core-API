@@ -10,6 +10,7 @@ namespace StokTakip_Core_API.Data
         }
         public DbSet<urun> Urunler { get; set; }
         public DbSet<Kategoriler> Kategoriler { get; set; }
-
+        public DbSet<IslemGecmisi> IslemGecmisi_Logs { get; set; }
+        public DbSet<StokHareketleri> StokHareketleri { get; set; }
     }
 }
