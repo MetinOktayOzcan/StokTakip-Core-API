@@ -7,3 +7,10 @@ Accept: application/json
 
 
 ###
+
+POST {{StokTakip_Core_API_HostAddress}}/api/kategoriler
+Content-Type: application/json
+
+{
+  "kategoriAdi": "Elektronik"
+}

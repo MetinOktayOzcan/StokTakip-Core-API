@@ -23,5 +23,17 @@ namespace StokTakip_Core_API.Controllers
 
             return Ok(Kategoriler);
         }
+
+        [HttpPost]
+        public async Task<IActionResult> KategoriEkle([FromBody] DTOs.KategoriEkleDTO yeniKategoriDTO)
+        {
+            var eklenecekKategori = new Models.Kategoriler
+            {
+                KategoriAdi = yeniKategoriDTO.KategoriAdi
+            };
+            await _context.Kategoriler.AddAsync(eklenecekKategori);
+            await _context.SaveChangesAsync();
+            return Ok(new { Mesajlar = "OK!", kategori = eklenecekKategori });
+        }
     }
 }
