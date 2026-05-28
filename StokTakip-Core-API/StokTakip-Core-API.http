@@ -7,10 +7,14 @@ Accept: application/json
 
 
 ###
-
-POST {{StokTakip_Core_API_HostAddress}}/api/kategoriler
+POST {{StokTakip_Core_API_HostAddress}}/api/urunler
 Content-Type: application/json
 
 {
-  "kategoriAdi": "Elektronik"
+  "urunAdi": "2026test - Duzeltilmis",
+  "birimFiyat": 23.43,
+  "stokMiktari": 23,
+  "kategoriID": 4
 }
+
+

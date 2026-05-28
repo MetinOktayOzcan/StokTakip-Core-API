@@ -7,6 +7,7 @@
         public int StokMiktari { get; set; }
         public string? KategoriAdi { get; set; }
         public int UrunID { get; set; }
+        public int KategoriID { get; set; }
 
     }
 }

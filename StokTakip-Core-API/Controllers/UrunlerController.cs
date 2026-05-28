@@ -41,7 +41,9 @@ namespace StokTakip_Core_API.Controllers
             {
                 UrunAdi = yeniUrunDTO.UrunAdi,
                 BirimFiyati = yeniUrunDTO.BirimFiyat,
-                StokAdedi = yeniUrunDTO.StokMiktari
+                StokAdedi = yeniUrunDTO.StokMiktari,
+                KategoriID = yeniUrunDTO.KategoriID,
+                EklenmeTarihi = DateTime.Now
             };
             await _context.Urunler.AddAsync(eklenecekUrun);
             await _context.SaveChangesAsync();
