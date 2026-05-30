@@ -31,3 +31,14 @@ Content-Type: application/json
 ### Ürün silme işlemi
 DELETE {{StokTakip_Core_API_HostAddress}}/api/urunler/24
 
+### kategori listeleme işlemi
+POST {{StokTakip_Core_API_HostAddress}}/api/stokhareketleri
+Content-Type: application/json
+
+{
+  "urunID": 21,
+  "islemTuru": "Giriş",
+  "miktar": 10,
+  "aciklama": "yeni alım yapıldı"
+}
+
