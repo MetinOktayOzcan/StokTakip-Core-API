@@ -1,12 +1,12 @@
 @StokTakip_Core_API_HostAddress = http://localhost:5185
 
-
+## ürün listeleme işlemi
 GET {{StokTakip_Core_API_HostAddress}}/api/urunler
 Accept: application/json
   
 
 
-###
+### ürün ekleme işlemi
 POST {{StokTakip_Core_API_HostAddress}}/api/urunler
 Content-Type: application/json
 
@@ -17,4 +17,17 @@ Content-Type: application/json
   "kategoriID": 4
 }
 
+### ürün güncelleme işlemi
+PUT {{StokTakip_Core_API_HostAddress}}/api/urunler/24
+Content-Type: application/json
+
+{
+  "urunAdi": "Guncelleme denemesi",
+  "birimFiyat": 919.99,
+  "stokMiktari": 12,
+  "kategoriID": 1
+}
+
+### Ürün silme işlemi
+DELETE {{StokTakip_Core_API_HostAddress}}/api/urunler/24
 
