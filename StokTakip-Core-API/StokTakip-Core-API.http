@@ -1,7 +1,7 @@
 @StokTakip_Core_API_HostAddress = http://localhost:5185
 
-## ürün listeleme işlemi
-GET {{StokTakip_Core_API_HostAddress}}/api/urunler
+##listeleme işlemleri
+GET {{StokTakip_Core_API_HostAddress}}/api/kategoriler
 Accept: application/json
   
 
@@ -42,3 +42,10 @@ Content-Type: application/json
   "aciklama": "yeni alım yapıldı"
 }
 
+### Kategori Ekleme
+POST {{StokTakip_Core_API_HostAddress}}/api/kategoriler
+Content-Type: application/json
+
+{
+  "kategoriAdi": "Test"
+}

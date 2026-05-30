@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StokTakip_Core_API.Data;
+using StokTakip_Core_API.Interfaces;
 
 namespace StokTakip_Core_API.Controllers
 {
@@ -9,17 +8,17 @@ namespace StokTakip_Core_API.Controllers
 
     public class KategorilerController : Controller
     {
-        private readonly stokTakipContext _context;
+        private readonly IKategoriRepository _kategoriRepository;
 
-        public KategorilerController(stokTakipContext context)
+        public KategorilerController(IKategoriRepository kategoriRepository)
         {
-            _context = context;
+            _kategoriRepository = kategoriRepository;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetKategoriler()
         {
-            var Kategoriler = await _context.Kategoriler.ToListAsync();
+            var Kategoriler = await _kategoriRepository.GetKategoriler();
 
             return Ok(Kategoriler);
         }
@@ -31,9 +30,14 @@ namespace StokTakip_Core_API.Controllers
             {
                 KategoriAdi = yeniKategoriDTO.KategoriAdi
             };
-            await _context.Kategoriler.AddAsync(eklenecekKategori);
-            await _context.SaveChangesAsync();
-            return Ok(new { Mesajlar = "OK!", kategori = eklenecekKategori });
+            bool kaydedildiMi = await _kategoriRepository.KategoriEkle(eklenecekKategori);
+
+            if (kaydedildiMi)
+            {
+                return Ok(new { Mesajlar = "OK!", kategori = eklenecekKategori });
+            }
+
+            return BadRequest(new { Mesajlar = "Hata!!! Kategori kaydedilemedi." });
         }
     }
 }
