@@ -50,7 +50,7 @@ Content-Type: application/json
   "kategoriAdi": "Test"
 }
 
-### 
+### Stok Hareketi Güncelleme
 POST {{StokTakip_Core_API_HostAddress}}/api/stokhareketleri
 Content-Type: application/json
 
@@ -60,3 +60,6 @@ Content-Type: application/json
   "miktar": 10,
   "aciklama": "Repository Pattern Test Girişi"
 }
+
+### İşlem Geçmişi Listeleme
+GET {{StokTakip_Core_API_HostAddress}}/api/islemgecmisi

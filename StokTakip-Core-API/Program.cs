@@ -16,6 +16,7 @@ builder.Services.AddOpenApi();
 builder.Services.AddScoped<StokTakip_Core_API.Interfaces.IKategoriRepository, StokTakip_Core_API.Repository.KategoriRepository>();
 builder.Services.AddScoped<StokTakip_Core_API.Interfaces.IUrunRepository, StokTakip_Core_API.Repository.UrunRepository>();
 builder.Services.AddScoped<StokTakip_Core_API.Interfaces.IStokHareketleriRepository, StokTakip_Core_API.Repository.StokHareketleriRepository>();
+builder.Services.AddScoped<StokTakip_Core_API.Interfaces.IIslemGecmisiRepository, StokTakip_Core_API.Repository.IslemGecmisiRepository>();
 
 
 

@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using StokTakip_Core_API.Data;
-using Microsoft.EntityFrameworkCore;
+using StokTakip_Core_API.Interfaces;
 
 namespace StokTakip_Core_API.Controllers
 {
@@ -8,18 +7,17 @@ namespace StokTakip_Core_API.Controllers
     [ApiController]
     public class IslemGecmisiController : Controller
     {
-        private readonly stokTakipContext _context;
+        private readonly IIslemGecmisiRepository _islemGecmisiRepository;
 
-        public IslemGecmisiController(stokTakipContext context)
+        public IslemGecmisiController(IIslemGecmisiRepository islemGecmisiRepository)
         {
-            _context = context;
+            _islemGecmisiRepository = islemGecmisiRepository;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetIslemGecmisleri()
         {
-            var IslemGecmisleri = await _context.IslemGecmisi_Logs.ToListAsync();
-
+            var IslemGecmisleri = await _islemGecmisiRepository.GetIslemGecmisleri();
             return Ok(IslemGecmisleri);
         }
     }
