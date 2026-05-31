@@ -1,7 +1,7 @@
 @StokTakip_Core_API_HostAddress = http://localhost:5185
 
 ##listeleme işlemleri
-GET {{StokTakip_Core_API_HostAddress}}/api/urunler
+GET {{StokTakip_Core_API_HostAddress}}/api/stokhareketleri
 Accept: application/json
   
 
@@ -48,4 +48,15 @@ Content-Type: application/json
 
 {
   "kategoriAdi": "Test"
+}
+
+### 
+POST {{StokTakip_Core_API_HostAddress}}/api/stokhareketleri
+Content-Type: application/json
+
+{
+  "urunID": 4, 
+  "islemTuru": "Giriş",
+  "miktar": 10,
+  "aciklama": "Repository Pattern Test Girişi"
 }

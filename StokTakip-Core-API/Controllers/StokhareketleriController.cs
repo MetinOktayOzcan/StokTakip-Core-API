@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using StokTakip_Core_API.Data;
-using Microsoft.EntityFrameworkCore;
+using StokTakip_Core_API.Interfaces;
 
 namespace StokTakip_Core_API.Controllers
 {
@@ -8,25 +7,26 @@ namespace StokTakip_Core_API.Controllers
     [ApiController]
     public class StokhareketleriController : Controller
     {
-        private readonly stokTakipContext _context;
+        private readonly IStokHareketleriRepository _stokHareketleriRepository;
+        private readonly IUrunRepository _urunRepository;
 
-        public StokhareketleriController(stokTakipContext context)
+        public StokhareketleriController(IStokHareketleriRepository stokHareketleriRepository, IUrunRepository urunRepository)
         {
-            _context = context;
+            _stokHareketleriRepository = stokHareketleriRepository;
+            _urunRepository = urunRepository;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetStokHareketleri()
         {
-            var StokHareketleri = await _context.StokHareketleri.ToListAsync();
-
+            var StokHareketleri = await _stokHareketleriRepository.GetStokHareketleri();
             return Ok(StokHareketleri);
         }
 
         [HttpPost]
         public async Task<IActionResult> StokHareketiEkle([FromBody] DTOs.StokhareketiDTO yeniHareketDTO)
         {
-            var islemGorenUrun = await _context.Urunler.FindAsync(yeniHareketDTO.UrunID);
+            var islemGorenUrun = await _urunRepository.GetUrunById(yeniHareketDTO.UrunID);
 
             if (islemGorenUrun == null)
             {
@@ -59,13 +59,14 @@ namespace StokTakip_Core_API.Controllers
                 IslemTarihi = DateTime.Now
             };
 
-            await _context.StokHareketleri.AddAsync(eklenecekHareket);
 
-            await _context.SaveChangesAsync();
+            await _stokHareketleriRepository.StokHareketiEkle(eklenecekHareket);
+
+            await _urunRepository.UrunGuncelle(islemGorenUrun);
 
             return Ok(new
             {
-                mesaj = "Stok hareketi başarıyla işlendi ve ürünün güncel stoğu güncellendi.",
+                mesaj = "OK!",
                 guncelStok = islemGorenUrun.StokAdedi,
                 hareket = eklenecekHareket
             });
