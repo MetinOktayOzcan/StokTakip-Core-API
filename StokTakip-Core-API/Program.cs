@@ -14,6 +14,7 @@ builder.Services.AddControllers();
 builder.Services.AddOpenApi();
 
 builder.Services.AddScoped<StokTakip_Core_API.Interfaces.IKategoriRepository, StokTakip_Core_API.Repository.KategoriRepository>();
+builder.Services.AddScoped<StokTakip_Core_API.Interfaces.IUrunRepository, StokTakip_Core_API.Repository.UrunRepository>();
 
 var app = builder.Build();
 

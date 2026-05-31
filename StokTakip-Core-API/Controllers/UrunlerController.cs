@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StokTakip_Core_API.Data;
+using StokTakip_Core_API.Interfaces;
 
 namespace StokTakip_Core_API.Controllers
 {
@@ -8,23 +7,21 @@ namespace StokTakip_Core_API.Controllers
     [ApiController]
     public class UrunlerController : ControllerBase
     {
-        private readonly stokTakipContext _context;
+        private readonly IUrunRepository _urunRepository;
 
-        public UrunlerController(stokTakipContext context)
+        public UrunlerController(IUrunRepository urunRepository)
         {
-            _context = context;
+            _urunRepository = urunRepository;
         }
 
         [HttpGet]
         public async Task<IActionResult> GetUrunler()
         {
-            var urunlerListesi = await _context.Urunler
-                                         .Include(u => u.Kategori)
-                                         .ToListAsync();
+            var urunlerListesi = await _urunRepository.GetUrunler();
 
             var donulecekDTO = urunlerListesi.Select(u => new DTOs.UrunEkleDTO
             {
-                UrunID = u.UrunId, 
+                UrunID = u.UrunId,
                 UrunAdi = u.UrunAdi,
                 BirimFiyat = u.BirimFiyati,
                 StokMiktari = u.StokAdedi,
@@ -45,52 +42,64 @@ namespace StokTakip_Core_API.Controllers
                 KategoriID = yeniUrunDTO.KategoriID,
                 EklenmeTarihi = DateTime.Now
             };
-            await _context.Urunler.AddAsync(eklenecekUrun);
-            await _context.SaveChangesAsync();
-            return Ok(new { Mesajlar = "OK!", urun = eklenecekUrun });
+
+            bool kaydedildiMi = await _urunRepository.UrunEkle(eklenecekUrun);
+
+            if (kaydedildiMi)
+            {
+                return Ok(new { Mesajlar = "OK!", urun = eklenecekUrun });
+            }
+            return BadRequest(new { Mesajlar = "Hata! Ürün kaydedilemedi." });
         }
 
         [HttpPut("{id}")]
         public async Task<IActionResult> UrunGuncelle(int id, [FromBody] DTOs.UrunEkleDTO guncelUrunDTO)
         {
-            var guncellenecekUrun = await _context.Urunler.FindAsync(id);
+            var guncellenecekUrun = await _urunRepository.GetUrunById(id);
 
             if (guncellenecekUrun == null)
             {
-                return NotFound(new { mesaj = "Güncellenecek ürün bulunamadı!" }); // 404 Hatası dön
+                return NotFound(new { mesaj = "Güncellenecek ürün bulunamadı!" });
             }
+
             guncellenecekUrun.UrunAdi = guncelUrunDTO.UrunAdi;
             guncellenecekUrun.BirimFiyati = guncelUrunDTO.BirimFiyat;
             guncellenecekUrun.StokAdedi = guncelUrunDTO.StokMiktari;
             guncellenecekUrun.KategoriID = guncelUrunDTO.KategoriID;
 
-            await _context.SaveChangesAsync();
+            bool guncellendiMi = await _urunRepository.UrunGuncelle(guncellenecekUrun);
 
-            return Ok(new { mesaj = "OK!", urun = guncellenecekUrun });
+            if (guncellendiMi)
+            {
+                return Ok(new { mesaj = "OK!", urun = guncellenecekUrun });
+            }
+            return BadRequest(new { mesaj = "Hata! Ürün güncellenemedi." });
         }
+
         [HttpDelete("{id}")]
         public async Task<IActionResult> UrunSil(int id)
         {
-            bool stokHareketiVarMi = await _context.StokHareketleri.AnyAsync(s => s.UrunID == id);
+            bool stokHareketiVarMi = await _urunRepository.UrununStokHareketiVarMi(id);
 
             if (stokHareketiVarMi)
             {
                 return BadRequest(new { mesaj = "Hata! Bu ürünün stok geçmişi bulunduğu için sistemden kalıcı olarak silinemez." });
             }
 
-            var silinecekUrun = await _context.Urunler.FindAsync(id);
+            var silinecekUrun = await _urunRepository.GetUrunById(id);
 
             if (silinecekUrun == null)
             {
                 return NotFound(new { mesaj = "Silinmek istenen ürün yok" });
             }
 
-            // 3. Ürünü veritabanından kaldır
-            _context.Urunler.Remove(silinecekUrun);
-            await _context.SaveChangesAsync();
+            bool silindiMi = await _urunRepository.UrunSil(silinecekUrun);
 
-            return Ok(new { mesaj = "Ürün sistemden silindi" });
+            if (silindiMi)
+            {
+                return Ok(new { mesaj = "Ürün sistemden silindi" });
+            }
+            return BadRequest(new { mesaj = "Hata! Ürün silinemedi." });
         }
-
     }
 }
