@@ -1,7 +1,7 @@
 @StokTakip_Core_API_HostAddress = http://localhost:5185
 
 ##listeleme işlemleri
-GET {{StokTakip_Core_API_HostAddress}}/api/stokhareketleri
+GET {{StokTakip_Core_API_HostAddress}}/api/kategoriler
 Accept: application/json
   
 
@@ -63,3 +63,5 @@ Content-Type: application/json
 
 ### İşlem Geçmişi Listeleme
 GET {{StokTakip_Core_API_HostAddress}}/api/islemgecmisi
+
+

@@ -29,7 +29,7 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-
+app.UseMiddleware<StokTakip_Core_API.Middlewares.ExceptionMiddleware>();
 app.UseAuthorization();
 
 app.MapControllers();
