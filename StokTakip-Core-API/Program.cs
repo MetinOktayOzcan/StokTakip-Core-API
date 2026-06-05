@@ -7,9 +7,18 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Services.AddDbContext<stokTakipContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("TumPlatformlar", policy =>
+    {
+        policy.AllowAnyOrigin()
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
 builder.Services.AddControllers();
+
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
 builder.Services.AddOpenApi();
 
@@ -18,9 +27,9 @@ builder.Services.AddScoped<StokTakip_Core_API.Interfaces.IUrunRepository, StokTa
 builder.Services.AddScoped<StokTakip_Core_API.Interfaces.IStokHareketleriRepository, StokTakip_Core_API.Repository.StokHareketleriRepository>();
 builder.Services.AddScoped<StokTakip_Core_API.Interfaces.IIslemGecmisiRepository, StokTakip_Core_API.Repository.IslemGecmisiRepository>();
 
-
-
 var app = builder.Build();
+
+app.UseCors("TumPlatformlar");
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
@@ -29,7 +38,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseMiddleware<StokTakip_Core_API.Middlewares.ExceptionMiddleware>();
+
 app.UseAuthorization();
 
 app.MapControllers();
