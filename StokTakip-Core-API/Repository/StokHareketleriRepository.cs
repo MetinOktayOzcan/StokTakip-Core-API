@@ -2,6 +2,7 @@
 using StokTakip_Core_API.Data;
 using StokTakip_Core_API.Interfaces;
 using StokTakip_Core_API.Models;
+using StokTakip_Core_API.DTOs;
 
 namespace StokTakip_Core_API.Repository
 {
@@ -14,9 +15,26 @@ namespace StokTakip_Core_API.Repository
             _context = context;
         }
 
-        public async Task<ICollection<StokHareketleri>> GetStokHareketleri()
+        public async Task<ICollection<StokhareketiDTO>> GetStokHareketleri()
         {
-            return await _context.StokHareketleri.ToListAsync();
+            return await _context.StokHareketleri
+                .Join(
+                    _context.Urunler,
+                    hareket => hareket.UrunID,
+                    urun => urun.UrunId,
+                    (hareket, urun) => new StokhareketiDTO
+                    {
+                        HareketID = hareket.HareketID,
+                        UrunID = hareket.UrunID,
+                        UrunAdi = urun.UrunAdi,
+                        IslemTuru = hareket.IslemTuru,
+                        Miktar = hareket.Miktar,
+                        Aciklama = hareket.Aciklama,
+                        IslemTarihi = hareket.IslemTarihi
+                    }
+                )
+                .OrderByDescending(x => x.IslemTarihi)
+                .ToListAsync();
         }
 
         public async Task<bool> StokHareketiEkle(StokHareketleri hareket)

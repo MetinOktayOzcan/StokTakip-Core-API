@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using StokTakip_Core_API.DTOs;
 using StokTakip_Core_API.Interfaces;
 
 namespace StokTakip_Core_API.Controllers
@@ -17,10 +18,14 @@ namespace StokTakip_Core_API.Controllers
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetStokHareketleri()
+        public async Task<ActionResult<IEnumerable<StokhareketiDTO>>> GetStokHareketleri()
         {
-            var StokHareketleri = await _stokHareketleriRepository.GetStokHareketleri();
-            return Ok(StokHareketleri);
+            var hareketler = await _stokHareketleriRepository.GetStokHareketleri();
+
+            if (hareketler == null)
+                return NotFound();
+
+            return Ok(hareketler);
         }
 
         [HttpPost]

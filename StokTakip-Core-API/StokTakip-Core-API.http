@@ -56,7 +56,7 @@ Content-Type: application/json
 
 {
   "urunID": 4, 
-  "islemTuru": "Giriş",
+  "islemTuru": "Cikis",
   "miktar": 999,
   "aciklama": "Repository Pattern Test Girişi"
 }
