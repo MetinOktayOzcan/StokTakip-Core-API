@@ -1,7 +1,7 @@
 @StokTakip_Core_API_HostAddress = http://localhost:5185
 
 ##listeleme işlemleri
-GET {{StokTakip_Core_API_HostAddress}}/api/kategoriler
+GET {{StokTakip_Core_API_HostAddress}}/api/urunler
 Accept: application/json
   
 
@@ -64,4 +64,23 @@ Content-Type: application/json
 ### İşlem Geçmişi Listeleme
 GET {{StokTakip_Core_API_HostAddress}}/api/islemgecmisi
 
+@HostAddress = http://localhost:5185
 
+
+### admin girişi yaparak token alma 
+POST https://localhost:7140/api/auth/login
+Content-Type: application/json
+
+{
+  "kullaniciAdi": "admin",
+  "sifre": "1234"
+}
+
+### token ile ürün listeleme işlemi yapma 
+GET https://localhost:7140/api/urunler
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImFkbWluIiwicm9sZSI6IkFkbWluIiwibmJmIjoxNzgwODIyMTI2LCJleHAiOjE3ODA4NTA5MjYsImlhdCI6MTc4MDgyMjEyNiwiaXNzIjoiU3Rva1Rha2lwQVBJIiwiYXVkIjoiU3Rva1Rha2lwQ2xpZW50In0.gJl39vAZzdLHxM7pDEmg8M4j_b2PJICKCTUE5-9QYxs
+
+
+### İlk Kurulum İşlemi (Admin Kullanıcı Oluşturma)
+POST {{StokTakip_Core_API_HostAddress}}/api/auth/ilk-kurulum
+Accept: application/json

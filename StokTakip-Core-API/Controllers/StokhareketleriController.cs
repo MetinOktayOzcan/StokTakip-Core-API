@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using StokTakip_Core_API.DTOs;
 using StokTakip_Core_API.Interfaces;
+using Microsoft.AspNetCore.Authorization;
+
 
 namespace StokTakip_Core_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class StokhareketleriController : Controller
     {
         private readonly IStokHareketleriRepository _stokHareketleriRepository;
