@@ -6,8 +6,9 @@ namespace StokTakip_Core_API.Models
     {
         [Key]
         public int KullaniciID { get; set; }
-        public string KullaniciAdi { get; set; } = string.Empty;
-        public string SifreHash { get; set; } = string.Empty;
-        public string Rol { get; set; } = "Kullanici";
+        public required string KullaniciAdi { get; set; }
+        public required string SifreHash { get; set; }
+        public required string Rol { get; set; }
+        public string? AdSoyad { get; set; }
     }
 }

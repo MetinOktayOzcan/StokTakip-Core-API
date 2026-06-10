@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StokTakip_Core_API.Data;
 
@@ -11,9 +12,11 @@ using StokTakip_Core_API.Data;
 namespace StokTakip_Core_API.Migrations
 {
     [DbContext(typeof(stokTakipContext))]
-    partial class stokTakipContextModelSnapshot : ModelSnapshot
+    [Migration("20260609174740_KonumEklendiVeFiyatDuzeltildi")]
+    partial class KonumEklendiVeFiyatDuzeltildi
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

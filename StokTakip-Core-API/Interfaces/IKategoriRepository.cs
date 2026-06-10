@@ -6,6 +6,5 @@ namespace StokTakip_Core_API.Interfaces
     {
         Task<ICollection<Kategoriler>> GetKategoriler();
         Task<bool> KategoriEkle(Kategoriler kategori);
-        Task<bool> Save();
     }
 }

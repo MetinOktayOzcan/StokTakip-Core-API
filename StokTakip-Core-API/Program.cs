@@ -47,12 +47,10 @@ builder.Services.AddScoped<StokTakip_Core_API.Interfaces.IIslemGecmisiRepository
 var app = builder.Build();
 
 app.UseCors("TumPlatformlar");
-
 app.UseHttpsRedirection();
 app.UseMiddleware<StokTakip_Core_API.Middlewares.ExceptionMiddleware>();
-
 app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapControllers();
+
 app.Run();

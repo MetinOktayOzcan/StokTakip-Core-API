@@ -7,6 +7,5 @@ namespace StokTakip_Core_API.Interfaces
     {
         Task<ICollection<StokhareketiDTO>> GetStokHareketleri();
         Task<bool> StokHareketiEkle(StokHareketleri hareket);
-        Task<bool> Save();
     }
 }

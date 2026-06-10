@@ -1,7 +1,9 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using System.ComponentModel.DataAnnotations.Schema;
 
 namespace StokTakip_Core_API.Models
 {
+    [Table("IslemGecmisi")]
     public class IslemGecmisi
     {
         [Key]

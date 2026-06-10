@@ -20,5 +20,7 @@ namespace StokTakip_Core_API.DTOs
 
         [Range(1, int.MaxValue, ErrorMessage = "Lütfen geçerli bir kategori ID giriniz.")]
         public int KategoriID { get; set; }
+
+        public string? Konum { get; set; }
     }
 }

@@ -16,7 +16,9 @@ namespace StokTakip_Core_API.Repository
 
         public async Task<ICollection<IslemGecmisi>> GetIslemGecmisleri()
         {
-            return await _context.IslemGecmisi_Logs.ToListAsync();
+            return await _context.IslemGecmisi
+                .OrderByDescending(x => x.IslemTarihi)
+                .ToListAsync();
         }
     }
 }

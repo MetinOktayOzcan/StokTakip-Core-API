@@ -27,10 +27,11 @@ namespace StokTakip_Core_API.Repository
                         HareketID = hareket.HareketID,
                         UrunID = hareket.UrunID,
                         UrunAdi = urun.UrunAdi,
-                        IslemTuru = hareket.IslemTuru,
+                        IslemTuru = hareket.IslemTuru ?? "Belirtilmedi",
                         Miktar = hareket.Miktar,
                         Aciklama = hareket.Aciklama,
-                        IslemTarihi = hareket.IslemTarihi
+                        IslemTarihi = hareket.IslemTarihi,
+                        Konum = hareket.Konum
                     }
                 )
                 .OrderByDescending(x => x.IslemTarihi)
@@ -40,13 +41,7 @@ namespace StokTakip_Core_API.Repository
         public async Task<bool> StokHareketiEkle(StokHareketleri hareket)
         {
             await _context.StokHareketleri.AddAsync(hareket);
-            return await Save();
-        }
-
-        public async Task<bool> Save()
-        {
-            var saved = await _context.SaveChangesAsync();
-            return saved > 0 ? true : false;
+            return await _context.SaveChangesAsync() > 0;
         }
     }
 }

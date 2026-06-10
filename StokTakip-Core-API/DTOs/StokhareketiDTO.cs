@@ -22,5 +22,6 @@ namespace StokTakip_Core_API.DTOs
         public string? UrunAdi { get; set; }
 
         public DateTime? IslemTarihi { get; set; }
+        public string? Konum { get; set; }
     }
 }

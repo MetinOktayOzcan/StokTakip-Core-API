@@ -6,7 +6,6 @@ namespace StokTakip_Core_API.Models
     {
         [Key]
         public int KategoriID { get; set; }
-
         public string? KategoriAdi { get; set; }
     }
 }

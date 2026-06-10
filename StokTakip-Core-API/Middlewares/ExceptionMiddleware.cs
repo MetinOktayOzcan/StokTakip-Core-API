@@ -1,5 +1,4 @@
 ﻿using System.Net;
-using System.Text.Json;
 
 namespace StokTakip_Core_API.Middlewares
 {
@@ -24,7 +23,7 @@ namespace StokTakip_Core_API.Middlewares
             }
         }
 
-        private static Task HandleExceptionAsync(HttpContext context, Exception exception)
+        private static async Task HandleExceptionAsync(HttpContext context, Exception exception)
         {
             context.Response.ContentType = "application/json";
             context.Response.StatusCode = (int)HttpStatusCode.InternalServerError;
@@ -36,8 +35,7 @@ namespace StokTakip_Core_API.Middlewares
                 hataDetayi = exception.Message
             };
 
-            var json = JsonSerializer.Serialize(response);
-            return context.Response.WriteAsync(json);
+            await context.Response.WriteAsJsonAsync(response);
         }
     }
 }

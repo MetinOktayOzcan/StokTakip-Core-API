@@ -4,14 +4,11 @@ namespace StokTakip_Core_API.Interfaces
 {
     public interface IUrunRepository
     {
-        Task<ICollection<urun>> GetUrunler();
-        Task<bool> UrunEkle(urun urun);
-
-        Task<urun> GetUrunById(int id);
-        Task<bool> UrunGuncelle(urun urun);
-        Task<bool> UrunSil(urun urun);
+        Task<ICollection<Urun>> GetUrunler();
+        Task<bool> UrunEkle(Urun urun);
+        Task<Urun?> GetUrunById(int id);
+        Task<bool> UrunGuncelle(Urun urun);
+        Task<bool> UrunSil(Urun urun);
         Task<bool> UrununStokHareketiVarMi(int id);
-
-        Task<bool> Save();
     }
 }

@@ -36,26 +36,6 @@ namespace StokTakip_Core_API.Controllers
             var token = GenerateJwtToken(kullanici);
             return Ok(new { token = token });
         }
-        /* Kullanıcı oluşturmak için bu metodu kullanabilirsiniz. Ancak, güvenlik nedeniyle bu metodu sadece ilk kurulumda çalıştırmanızı öneririm.
-        [HttpPost("ilk-kurulum")]
-        public async Task<IActionResult> IlkKurulum()
-        {
-            if (await _context.Kullanicilar.AnyAsync())
-                return BadRequest("Sistemde zaten kullanıcı var. Bu metot sadece 1 kez çalışır.");
-
-            var admin = new Kullanici
-            {
-                KullaniciAdi = "admin",
-                SifreHash = BCrypt.Net.BCrypt.HashPassword("1234"),
-                Rol = "Admin"
-            };
-
-            _context.Kullanicilar.Add(admin);
-            await _context.SaveChangesAsync();
-
-            return Ok("İlk admin kullanıcısı başarıyla oluşturuldu.");
-        }
-        */
 
         private string GenerateJwtToken(Kullanici kullanici)
         {
@@ -66,6 +46,7 @@ namespace StokTakip_Core_API.Controllers
             {
                 new Claim(JwtRegisteredClaimNames.UniqueName, kullanici.KullaniciAdi),
                 new Claim(ClaimTypes.Role, kullanici.Rol),
+                new Claim("AdSoyad", kullanici.AdSoyad ?? kullanici.KullaniciAdi),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString())
             };
 
@@ -76,7 +57,7 @@ namespace StokTakip_Core_API.Controllers
                 issuer: jwtSettings["Issuer"],
                 audience: jwtSettings["Audience"],
                 claims: claims,
-                expires: DateTime.Now.AddHours(2),
+                expires: DateTime.UtcNow.AddHours(5), // UTC+3 Timezone + 2 Saat geçerlilik süresi 
                 signingCredentials: creds
             );
 

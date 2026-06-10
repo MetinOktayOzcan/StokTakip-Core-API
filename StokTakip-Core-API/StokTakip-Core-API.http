@@ -82,5 +82,5 @@ Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6I
 
 
 ### İlk Kurulum İşlemi (Admin Kullanıcı Oluşturma)
-POST {{StokTakip_Core_API_HostAddress}}/api/auth/ilk-kurulum
+POST https://stoktakip-core-api2026007181930-fcgheugwghhvcdck.spaincentral-01.azurewebsites.net/api/auth/ilk-kurulum
 Accept: application/json

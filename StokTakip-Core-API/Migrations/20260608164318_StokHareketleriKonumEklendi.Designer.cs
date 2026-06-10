@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StokTakip_Core_API.Data;
 
@@ -11,9 +12,11 @@ using StokTakip_Core_API.Data;
 namespace StokTakip_Core_API.Migrations
 {
     [DbContext(typeof(stokTakipContext))]
-    partial class stokTakipContextModelSnapshot : ModelSnapshot
+    [Migration("20260608164318_StokHareketleriKonumEklendi")]
+    partial class StokHareketleriKonumEklendi
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -44,7 +47,7 @@ namespace StokTakip_Core_API.Migrations
 
                     b.HasKey("LogID");
 
-                    b.ToTable("IslemGecmisi");
+                    b.ToTable("IslemGecmisi_Logs");
                 });
 
             modelBuilder.Entity("StokTakip_Core_API.Models.Kategoriler", b =>
@@ -70,9 +73,6 @@ namespace StokTakip_Core_API.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("KullaniciID"));
-
-                    b.Property<string>("AdSoyad")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("KullaniciAdi")
                         .IsRequired()
@@ -108,9 +108,6 @@ namespace StokTakip_Core_API.Migrations
                     b.Property<string>("IslemTuru")
                         .HasColumnType("nvarchar(max)");
 
-                    b.Property<string>("Konum")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<int>("Miktar")
                         .HasColumnType("int");
 
@@ -138,9 +135,6 @@ namespace StokTakip_Core_API.Migrations
 
                     b.Property<int?>("KategoriID")
                         .HasColumnType("int");
-
-                    b.Property<string>("Konum")
-                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("StokAdedi")
                         .HasColumnType("int");
