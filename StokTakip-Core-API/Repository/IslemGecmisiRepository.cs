@@ -14,10 +14,13 @@ namespace StokTakip_Core_API.Repository
             _context = context;
         }
 
-        public async Task<ICollection<IslemGecmisi>> GetIslemGecmisleri()
+        public async Task<ICollection<IslemGecmisi>> GetIslemGecmisleri(int sayfa = 1, int boyut = 50)
         {
             return await _context.IslemGecmisi
+                .AsNoTracking()
                 .OrderByDescending(x => x.IslemTarihi)
+                .Skip((sayfa - 1) * boyut)
+                .Take(boyut)
                 .ToListAsync();
         }
     }

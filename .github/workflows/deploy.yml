@@ -1,0 +1,40 @@
+name: API Build and Check
+
+on:
+  push:
+    branches: [ "main", "master" ]
+  pull_request:
+    branches: [ "main", "master" ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: '10.0.x'
+
+    - name: Restore dependencies
+      run: dotnet restore
+
+    - name: Build
+      run: dotnet build --configuration Release --no-restore
+
+    - name: Run Unit Tests
+      run: dotnet test --configuration Release --no-build --verbosity normal
+
+    - name: Scan for Vulnerable NuGet Packages
+      run: dotnet list package --vulnerable --include-transitive
+
+    - name: Publish API
+      run: dotnet publish --configuration Release --no-build --output ./publish
+
+    - name: Upload Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: api-publish-files
+        path: ./publish

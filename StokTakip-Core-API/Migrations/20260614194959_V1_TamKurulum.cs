@@ -6,11 +6,26 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace StokTakip_Core_API.Migrations
 {
     /// <inheritdoc />
-    public partial class AddKullaniciTable : Migration
+    public partial class V1_TamKurulum : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "IslemGecmisi",
+                columns: table => new
+                {
+                    LogID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    IslemTarihi = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Kullanici = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    IslemTipi = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Detay = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_IslemGecmisi", x => x.LogID);
+                });
 
             migrationBuilder.CreateTable(
                 name: "Kategoriler",
@@ -26,6 +41,24 @@ namespace StokTakip_Core_API.Migrations
                 });
 
             migrationBuilder.CreateTable(
+                name: "Kullanicilar",
+                columns: table => new
+                {
+                    KullaniciID = table.Column<int>(type: "int", nullable: false)
+                        .Annotation("SqlServer:Identity", "1, 1"),
+                    KullaniciAdi = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: false),
+                    SifreHash = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: false),
+                    AdSoyad = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
+                    Rol = table.Column<string>(type: "nvarchar(20)", maxLength: 20, nullable: false),
+                    RefreshToken = table.Column<string>(type: "nvarchar(255)", maxLength: 255, nullable: true),
+                    RefreshTokenExpiryTime = table.Column<DateTime>(type: "datetime2", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Kullanicilar", x => x.KullaniciID);
+                });
+
+            migrationBuilder.CreateTable(
                 name: "StokHareketleri",
                 columns: table => new
                 {
@@ -35,7 +68,8 @@ namespace StokTakip_Core_API.Migrations
                     IslemTuru = table.Column<string>(type: "nvarchar(max)", nullable: true),
                     Miktar = table.Column<int>(type: "int", nullable: false),
                     IslemTarihi = table.Column<DateTime>(type: "datetime2", nullable: false),
-                    Aciklama = table.Column<string>(type: "nvarchar(max)", nullable: true)
+                    Aciklama = table.Column<string>(type: "nvarchar(max)", nullable: true),
+                    Konum = table.Column<string>(type: "nvarchar(max)", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -48,11 +82,14 @@ namespace StokTakip_Core_API.Migrations
                 {
                     UrunId = table.Column<int>(type: "int", nullable: false)
                         .Annotation("SqlServer:Identity", "1, 1"),
-                    UrunAdi = table.Column<string>(type: "nvarchar(max)", nullable: false),
+                    UrunAdi = table.Column<string>(type: "nvarchar(100)", maxLength: 100, nullable: false),
                     KategoriID = table.Column<int>(type: "int", nullable: true),
                     StokAdedi = table.Column<int>(type: "int", nullable: false),
                     BirimFiyati = table.Column<decimal>(type: "decimal(18,2)", nullable: false),
-                    EklenmeTarihi = table.Column<DateTime>(type: "datetime2", nullable: false)
+                    EklenmeTarihi = table.Column<DateTime>(type: "datetime2", nullable: false),
+                    Konum = table.Column<string>(type: "nvarchar(50)", maxLength: 50, nullable: true),
+                    IsDeleted = table.Column<bool>(type: "bit", nullable: false),
+                    RowVersion = table.Column<byte[]>(type: "rowversion", rowVersion: true, nullable: true)
                 },
                 constraints: table =>
                 {
@@ -64,31 +101,11 @@ namespace StokTakip_Core_API.Migrations
                         principalColumn: "KategoriID");
                 });
 
-            migrationBuilder.CreateTable(
-                name: "Kullanici",
-                columns: table => new
-                {
-                    KullaniciID = table.Column<int>(type: "int", nullable: false)
-                        .Annotation("SqlServer:Identity", "1, 1"),
-                    KullaniciAdi = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    SifreHash = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    Rol = table.Column<string>(type: "nvarchar(max)", nullable: false),
-                    StokHareketleriHareketID = table.Column<int>(type: "int", nullable: true)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Kullanici", x => x.KullaniciID);
-                    table.ForeignKey(
-                        name: "FK_Kullanici_StokHareketleri_StokHareketleriHareketID",
-                        column: x => x.StokHareketleriHareketID,
-                        principalTable: "StokHareketleri",
-                        principalColumn: "HareketID");
-                });
-
             migrationBuilder.CreateIndex(
-                name: "IX_Kullanici_StokHareketleriHareketID",
-                table: "Kullanici",
-                column: "StokHareketleriHareketID");
+                name: "IX_Kullanicilar_KullaniciAdi",
+                table: "Kullanicilar",
+                column: "KullaniciAdi",
+                unique: true);
 
             migrationBuilder.CreateIndex(
                 name: "IX_Urunler_KategoriID",
@@ -100,16 +117,16 @@ namespace StokTakip_Core_API.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
-                name: "IslemGecmisi_Logs");
+                name: "IslemGecmisi");
 
             migrationBuilder.DropTable(
-                name: "Kullanici");
-
-            migrationBuilder.DropTable(
-                name: "Urunler");
+                name: "Kullanicilar");
 
             migrationBuilder.DropTable(
                 name: "StokHareketleri");
+
+            migrationBuilder.DropTable(
+                name: "Urunler");
 
             migrationBuilder.DropTable(
                 name: "Kategoriler");

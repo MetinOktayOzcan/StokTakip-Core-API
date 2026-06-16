@@ -5,14 +5,28 @@ namespace StokTakip_Core_API.Data
 {
     public class stokTakipContext : DbContext
     {
-        public stokTakipContext(DbContextOptions<stokTakipContext> options) : base(options)
-        {
-        }
+        public stokTakipContext(DbContextOptions<stokTakipContext> options) : base(options) { }
 
-        public DbSet<Urun> Urunler { get; set; }
-        public DbSet<Kategoriler> Kategoriler { get; set; }
-        public DbSet<StokHareketleri> StokHareketleri { get; set; }
-        public DbSet<IslemGecmisi> IslemGecmisi { get; set; }
-        public DbSet<Kullanici> Kullanicilar { get; set; }
+        public DbSet<Kullanici> Kullanicilar => Set<Kullanici>();
+        public DbSet<Urun> Urunler => Set<Urun>();
+        public DbSet<Kategoriler> Kategoriler => Set<Kategoriler>();
+        public DbSet<StokHareketleri> StokHareketleri => Set<StokHareketleri>();
+        public DbSet<IslemGecmisi> IslemGecmisi => Set<IslemGecmisi>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            modelBuilder.Entity<Kullanici>()
+                .HasIndex(k => k.KullaniciAdi)
+                .IsUnique();
+
+            modelBuilder.Entity<Urun>()
+                .HasQueryFilter(u => !u.IsDeleted);
+
+            modelBuilder.Entity<Urun>()
+                .Property(u => u.BirimFiyati)
+                .HasPrecision(18, 2);
+        }
     }
 }

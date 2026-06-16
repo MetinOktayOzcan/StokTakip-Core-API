@@ -12,8 +12,8 @@ using StokTakip_Core_API.Data;
 namespace StokTakip_Core_API.Migrations
 {
     [DbContext(typeof(stokTakipContext))]
-    [Migration("20260607092058_AddKullaniciTable")]
-    partial class AddKullaniciTable
+    [Migration("20260615201453_AddLoginLockoutFields")]
+    partial class AddLoginLockoutFields
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -47,7 +47,7 @@ namespace StokTakip_Core_API.Migrations
 
                     b.HasKey("LogID");
 
-                    b.ToTable("IslemGecmisi_Logs");
+                    b.ToTable("IslemGecmisi");
                 });
 
             modelBuilder.Entity("StokTakip_Core_API.Models.Kategoriler", b =>
@@ -74,26 +74,45 @@ namespace StokTakip_Core_API.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("KullaniciID"));
 
+                    b.Property<string>("AdSoyad")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
+
+                    b.Property<int>("HataliGirisSayisi")
+                        .HasColumnType("int");
+
+                    b.Property<DateTime?>("KilitlenmeTarihi")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("KullaniciAdi")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<DateTime?>("RefreshTokenExpiryTime")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("RefreshTokenHash")
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.Property<string>("Rol")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(20)
+                        .HasColumnType("nvarchar(20)");
 
                     b.Property<string>("SifreHash")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("StokHareketleriHareketID")
-                        .HasColumnType("int");
+                        .HasMaxLength(255)
+                        .HasColumnType("nvarchar(255)");
 
                     b.HasKey("KullaniciID");
 
-                    b.HasIndex("StokHareketleriHareketID");
+                    b.HasIndex("KullaniciAdi")
+                        .IsUnique();
 
-                    b.ToTable("Kullanici");
+                    b.ToTable("Kullanicilar");
                 });
 
             modelBuilder.Entity("StokTakip_Core_API.Models.StokHareketleri", b =>
@@ -113,6 +132,9 @@ namespace StokTakip_Core_API.Migrations
                     b.Property<string>("IslemTuru")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<string>("Konum")
+                        .HasColumnType("nvarchar(max)");
+
                     b.Property<int>("Miktar")
                         .HasColumnType("int");
 
@@ -124,7 +146,7 @@ namespace StokTakip_Core_API.Migrations
                     b.ToTable("StokHareketleri");
                 });
 
-            modelBuilder.Entity("StokTakip_Core_API.Models.urun", b =>
+            modelBuilder.Entity("StokTakip_Core_API.Models.Urun", b =>
                 {
                     b.Property<int>("UrunId")
                         .ValueGeneratedOnAdd()
@@ -133,20 +155,34 @@ namespace StokTakip_Core_API.Migrations
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UrunId"));
 
                     b.Property<decimal>("BirimFiyati")
+                        .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
 
                     b.Property<DateTime>("EklenmeTarihi")
                         .HasColumnType("datetime2");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<int?>("KategoriID")
                         .HasColumnType("int");
+
+                    b.Property<string>("Konum")
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
 
                     b.Property<int>("StokAdedi")
                         .HasColumnType("int");
 
                     b.Property<string>("UrunAdi")
                         .IsRequired()
-                        .HasColumnType("nvarchar(max)");
+                        .HasMaxLength(100)
+                        .HasColumnType("nvarchar(100)");
 
                     b.HasKey("UrunId");
 
@@ -155,25 +191,13 @@ namespace StokTakip_Core_API.Migrations
                     b.ToTable("Urunler");
                 });
 
-            modelBuilder.Entity("StokTakip_Core_API.Models.Kullanici", b =>
-                {
-                    b.HasOne("StokTakip_Core_API.Models.StokHareketleri", null)
-                        .WithMany("Kullanicilar")
-                        .HasForeignKey("StokHareketleriHareketID");
-                });
-
-            modelBuilder.Entity("StokTakip_Core_API.Models.urun", b =>
+            modelBuilder.Entity("StokTakip_Core_API.Models.Urun", b =>
                 {
                     b.HasOne("StokTakip_Core_API.Models.Kategoriler", "Kategori")
                         .WithMany()
                         .HasForeignKey("KategoriID");
 
                     b.Navigation("Kategori");
-                });
-
-            modelBuilder.Entity("StokTakip_Core_API.Models.StokHareketleri", b =>
-                {
-                    b.Navigation("Kullanicilar");
                 });
 #pragma warning restore 612, 618
         }

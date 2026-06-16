@@ -5,7 +5,7 @@
 namespace StokTakip_Core_API.Migrations
 {
     /// <inheritdoc />
-    public partial class StokHareketleriKonumEklendi : Migration
+    public partial class InitialSetup : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

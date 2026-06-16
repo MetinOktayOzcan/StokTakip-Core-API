@@ -1,9 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StokTakip_Core_API.Data;
-using StokTakip_Core_API.Models;
 using StokTakip_Core_API.DTOs;
+using StokTakip_Core_API.Interfaces;
+using StokTakip_Core_API.Models;
+using StokTakip_Core_API.Services;
 
 namespace StokTakip_Core_API.Controllers
 {
@@ -12,80 +12,71 @@ namespace StokTakip_Core_API.Controllers
     [Authorize]
     public class KategorilerController : ControllerBase
     {
-        private readonly stokTakipContext _context;
+        private readonly IKategoriRepository _kategoriRepository;
+        private readonly IAuditLogService _auditLogService;
 
-        public KategorilerController(stokTakipContext context)
+        public KategorilerController(IKategoriRepository kategoriRepository, IAuditLogService auditLogService)
         {
-            _context = context;
-        }
-
-        private async Task LogOlustur(string islemTipi, string detay)
-        {
-            var aktifKullaniciAdi = User.Identity?.Name;
-            var islemYapanAdSoyad = "Sistem";
-
-            if (!string.IsNullOrEmpty(aktifKullaniciAdi))
-            {
-                var kullanici = await _context.Kullanicilar.FirstOrDefaultAsync(k => k.KullaniciAdi == aktifKullaniciAdi);
-                islemYapanAdSoyad = !string.IsNullOrWhiteSpace(kullanici?.AdSoyad) ? kullanici.AdSoyad : aktifKullaniciAdi;
-            }
-
-            var log = new IslemGecmisi
-            {
-                IslemTarihi = DateTime.UtcNow.AddHours(3),
-                Kullanici = islemYapanAdSoyad,
-                IslemTipi = islemTipi,
-                Detay = detay
-            };
-
-            _context.IslemGecmisi.Add(log);
-            await _context.SaveChangesAsync();
+            _kategoriRepository = kategoriRepository;
+            _auditLogService = auditLogService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetKategoriler()
+        public async Task<IActionResult> Get([FromQuery] int sayfa = 1, [FromQuery] int boyut = 50)
         {
-            var kategoriler = await _context.Kategoriler.ToListAsync();
-            return Ok(kategoriler);
+            sayfa = sayfa < 1 ? 1 : Math.Min(sayfa, 1000);
+            boyut = boyut < 1 ? 10 : Math.Min(boyut, 100);
+
+            var kategoriler = await _kategoriRepository.GetKategoriler(sayfa, boyut);
+            return Ok(kategoriler.Select(k => new { k.KategoriID, k.KategoriAdi }));
         }
 
         [HttpPost]
-        public async Task<IActionResult> KategoriEkle([FromBody] KategoriEkleDTO dto)
+        [Authorize(Roles = "Admin,Yonetici")]
+        public async Task<IActionResult> Post([FromBody] KategoriEkleDTO dto)
         {
             var kategori = new Kategoriler { KategoriAdi = dto.KategoriAdi };
-            _context.Kategoriler.Add(kategori);
-            await _context.SaveChangesAsync();
 
-            await LogOlustur("Kategori Ekleme", $"'{dto.KategoriAdi}' adlı kategori eklendi.");
-            return Ok(new { mesaj = "Kategori eklendi." });
+            if (!await _kategoriRepository.KategoriEkle(kategori))
+                return BadRequest("Kategori eklenemedi.");
+
+            await _auditLogService.LogOlusturAsync("Kategori Ekleme", $"'{dto.KategoriAdi}' eklendi.");
+            return CreatedAtAction(nameof(Get), new { id = kategori.KategoriID }, kategori);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> KategoriGuncelle(int id, [FromBody] KategoriEkleDTO dto)
+        [Authorize(Roles = "Admin,Yonetici")]
+        public async Task<IActionResult> Put(int id, [FromBody] KategoriEkleDTO dto)
         {
-            var kategori = await _context.Kategoriler.FindAsync(id);
-            if (kategori == null) return NotFound(new { mesaj = "Kategori bulunamadı." });
+            var kategori = await _kategoriRepository.GetKategoriById(id);
+            if (kategori == null) return NotFound();
 
-            var eskiAd = kategori.KategoriAdi;
             kategori.KategoriAdi = dto.KategoriAdi;
-            await _context.SaveChangesAsync();
 
-            await LogOlustur("Kategori Güncelleme", $"'{eskiAd}' ➔ '{dto.KategoriAdi}' olarak güncellendi.");
-            return Ok(new { mesaj = "Kategori güncellendi." });
+            if (!await _kategoriRepository.KategoriGuncelle(kategori))
+                return BadRequest("Güncelleme işlemi başarısız oldu.");
+
+            await _auditLogService.LogOlusturAsync("Kategori Güncelleme", $"'{kategori.KategoriAdi}' güncellendi.");
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> KategoriSil(int id)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(int id)
         {
-            var kategori = await _context.Kategoriler.FindAsync(id);
-            if (kategori == null) return NotFound(new { mesaj = "Kategori bulunamadı." });
+            var kategori = await _kategoriRepository.GetKategoriById(id);
+            if (kategori == null) return NotFound();
+
+            if (await _kategoriRepository.KategoriyeAitUrunVarMi(id))
+                return BadRequest("Bu kategoriye ait aktif ürünler bulunduğu için silinemez.");
 
             var silinenAd = kategori.KategoriAdi;
-            _context.Kategoriler.Remove(kategori);
-            await _context.SaveChangesAsync();
 
-            await LogOlustur("Kategori Silme", $"'{silinenAd}' adlı kategori silindi.");
-            return Ok(new { mesaj = "Kategori silindi." });
+            if (!await _kategoriRepository.KategoriSil(kategori))
+                return BadRequest("Kategori silinirken bir hata oluştu.");
+
+            await _auditLogService.LogOlusturAsync("Kategori Silme", $"'{silinenAd}' silindi.");
+            return NoContent();
         }
     }
 }

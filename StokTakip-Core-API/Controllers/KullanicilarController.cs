@@ -1,121 +1,123 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using StokTakip_Core_API.Data;
+using StokTakip_Core_API.DTOs;
+using StokTakip_Core_API.Interfaces;
 using StokTakip_Core_API.Models;
+using StokTakip_Core_API.Services;
+using System.Security.Claims;
 
 namespace StokTakip_Core_API.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+    [Authorize(Roles = "Admin,Yonetici")]
     public class KullanicilarController : ControllerBase
     {
-        private readonly stokTakipContext _context;
+        private readonly IKullaniciRepository _kullaniciRepository;
+        private readonly IAuditLogService _auditLogService;
 
-        public KullanicilarController(stokTakipContext context)
+        public KullanicilarController(IKullaniciRepository kullaniciRepository, IAuditLogService auditLogService)
         {
-            _context = context;
-        }
-
-        private async Task LogOlustur(string islemTipi, string detay)
-        {
-            var aktifKullaniciAdi = User.Identity?.Name;
-            var islemYapanAdSoyad = "Sistem";
-
-            if (!string.IsNullOrEmpty(aktifKullaniciAdi))
-            {
-                var kullanici = await _context.Kullanicilar.FirstOrDefaultAsync(k => k.KullaniciAdi == aktifKullaniciAdi);
-                islemYapanAdSoyad = !string.IsNullOrWhiteSpace(kullanici?.AdSoyad) ? kullanici.AdSoyad : aktifKullaniciAdi;
-            }
-
-            var log = new IslemGecmisi
-            {
-                IslemTarihi = DateTime.UtcNow.AddHours(3),
-                Kullanici = islemYapanAdSoyad,
-                IslemTipi = islemTipi,
-                Detay = detay
-            };
-
-            _context.IslemGecmisi.Add(log);
-            await _context.SaveChangesAsync();
+            _kullaniciRepository = kullaniciRepository;
+            _auditLogService = auditLogService;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetKullanicilar()
+        public async Task<IActionResult> Get([FromQuery] int sayfa = 1, [FromQuery] int boyut = 50)
         {
-            var kullanicilar = await _context.Kullanicilar
-                .Select(k => new { k.KullaniciID, k.KullaniciAdi, k.AdSoyad, k.Rol })
-                .ToListAsync();
-            return Ok(kullanicilar);
+            sayfa = sayfa < 1 ? 1 : Math.Min(sayfa, 1000);
+            boyut = boyut < 1 ? 10 : Math.Min(boyut, 100);
+
+            var kullanicilar = await _kullaniciRepository.GetKullanicilar(sayfa, boyut);
+            return Ok(kullanicilar.Select(k => new { k.KullaniciID, k.KullaniciAdi, k.AdSoyad, k.Rol }));
         }
 
         [HttpPost]
-        public async Task<IActionResult> KullaniciEkle([FromBody] KullaniciDTO veri)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Post([FromBody] KullaniciDTO dto)
         {
-            if (await _context.Kullanicilar.AnyAsync(k => k.KullaniciAdi == veri.KullaniciAdi))
-                return BadRequest(new { mesaj = "Bu kullanıcı adı kullanılıyor." });
+            if (await _kullaniciRepository.KullaniciMevcutMu(dto.KullaniciAdi))
+                return BadRequest(new { Mesaj = "Bu kullanıcı adı zaten kullanılıyor." });
 
             var yeniKullanici = new Kullanici
             {
-                KullaniciAdi = veri.KullaniciAdi,
-                AdSoyad = veri.AdSoyad,
-                Rol = veri.Rol,
-                SifreHash = BCrypt.Net.BCrypt.HashPassword(veri.Sifre)
+                KullaniciAdi = dto.KullaniciAdi,
+                AdSoyad = dto.AdSoyad,
+                Rol = dto.Rol,
+                SifreHash = BCrypt.Net.BCrypt.HashPassword(dto.Sifre)
             };
 
-            _context.Kullanicilar.Add(yeniKullanici);
-            await _context.SaveChangesAsync();
+            if (!await _kullaniciRepository.KullaniciEkle(yeniKullanici))
+                return BadRequest(new { Mesaj = "Kullanıcı eklenirken bir hata oluştu." });
 
-            await LogOlustur("Kullanıcı Ekleme", $"'{veri.AdSoyad}' ({veri.Rol}) sisteme eklendi.");
-            return Ok(new { mesaj = "Kullanıcı eklendi." });
+            await _auditLogService.LogOlusturAsync("Kullanıcı Ekleme", $"'{dto.AdSoyad}' ({dto.Rol}) sisteme eklendi.");
+            return CreatedAtAction(nameof(Get), new { id = yeniKullanici.KullaniciID }, new { Mesaj = "Kullanıcı başarıyla eklendi." });
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> KullaniciGuncelle(int id, [FromBody] KullaniciDTO veri)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Put(int id, [FromBody] KullaniciDTO dto)
         {
-            var kullanici = await _context.Kullanicilar.FindAsync(id);
-            if (kullanici == null) return NotFound(new { mesaj = "Kullanıcı bulunamadı." });
+            var kullanici = await _kullaniciRepository.GetKullaniciById(id);
+            if (kullanici == null) return NotFound(new { Mesaj = "Kullanıcı bulunamadı." });
 
-            if (kullanici.KullaniciAdi != veri.KullaniciAdi &&
-                await _context.Kullanicilar.AnyAsync(k => k.KullaniciAdi == veri.KullaniciAdi))
-                return BadRequest(new { mesaj = "Bu kullanıcı adı başkasına ait." });
+            var tokenKullaniciId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            kullanici.AdSoyad = veri.AdSoyad;
-            kullanici.KullaniciAdi = veri.KullaniciAdi;
-            kullanici.Rol = veri.Rol;
-
-            if (!string.IsNullOrWhiteSpace(veri.Sifre))
+            if (kullanici.KullaniciAdi.ToLower() == "admin")
             {
-                kullanici.SifreHash = BCrypt.Net.BCrypt.HashPassword(veri.Sifre);
+                if (kullanici.KullaniciID.ToString() != tokenKullaniciId)
+                    return BadRequest(new { Mesaj = "Sistem ana yöneticisinin bilgileri başka bir yönetici tarafından değiştirilemez." });
+
+                if (dto.KullaniciAdi.ToLower() != "admin")
+                    return BadRequest(new { Mesaj = "Sistem ana yöneticisinin kullanıcı adı değiştirilemez." });
+
+                if (dto.Rol != "Admin")
+                    return BadRequest(new { Mesaj = "Sistem ana yöneticisinin yetkisi düşürülemez." });
             }
 
-            await _context.SaveChangesAsync();
-            await LogOlustur("Kullanıcı Güncelleme", $"'{veri.AdSoyad}' güncellendi. Yeni Rol: {veri.Rol}");
-            return Ok(new { mesaj = "Kullanıcı güncellendi." });
+            if (kullanici.KullaniciAdi != dto.KullaniciAdi && await _kullaniciRepository.KullaniciMevcutMu(dto.KullaniciAdi))
+                return BadRequest(new { Mesaj = "Bu kullanıcı adı başka bir kullanıcıya ait." });
+
+            kullanici.AdSoyad = dto.AdSoyad;
+            kullanici.KullaniciAdi = dto.KullaniciAdi;
+            kullanici.Rol = dto.Rol;
+
+            if (!string.IsNullOrWhiteSpace(dto.Sifre))
+            {
+                kullanici.SifreHash = BCrypt.Net.BCrypt.HashPassword(dto.Sifre);
+                kullanici.RefreshTokenHash = null;
+                kullanici.RefreshTokenExpiryTime = null;
+            }
+
+            if (!await _kullaniciRepository.KullaniciGuncelle(kullanici))
+                return BadRequest(new { Mesaj = "Kullanıcı güncellenemedi." });
+
+            await _auditLogService.LogOlusturAsync("Kullanıcı Güncelleme", $"'{dto.AdSoyad}' güncellendi. Yeni Rol: {dto.Rol}");
+            return Ok(new { Mesaj = "Kullanıcı bilgileri güncellendi." });
         }
 
         [HttpDelete("{id}")]
-        public async Task<IActionResult> KullaniciSil(int id)
+        [Authorize(Roles = "Admin")]
+        public async Task<IActionResult> Delete(int id)
         {
-            var kullanici = await _context.Kullanicilar.FindAsync(id);
-            if (kullanici == null) return NotFound(new { mesaj = "Kullanıcı bulunamadı." });
+            var kullanici = await _kullaniciRepository.GetKullaniciById(id);
+            if (kullanici == null) return NotFound(new { Mesaj = "Kullanıcı bulunamadı." });
 
-            var silinen = kullanici.AdSoyad;
-            _context.Kullanicilar.Remove(kullanici);
-            await _context.SaveChangesAsync();
+            var tokenKullaniciId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
-            await LogOlustur("Kullanıcı Silme", $"'{silinen}' silindi.");
-            return Ok(new { mesaj = "Kullanıcı silindi." });
+            if (kullanici.KullaniciID.ToString() == tokenKullaniciId)
+                return BadRequest(new { Mesaj = "Kendi hesabınızı silemezsiniz." });
+
+            if (kullanici.KullaniciAdi.ToLower() == "admin")
+                return BadRequest(new { Mesaj = "Sistem varsayılan ana yöneticisi silinemez." });
+
+            var silinenAd = kullanici.AdSoyad;
+
+            if (!await _kullaniciRepository.KullaniciSil(kullanici))
+                return BadRequest(new { Mesaj = "Kullanıcı silinemedi." });
+
+            await _auditLogService.LogOlusturAsync("Kullanıcı Silme", $"'{silinenAd}' silindi.");
+            return Ok(new { Mesaj = "Kullanıcı başarıyla silindi." });
         }
-    }
-
-    public class KullaniciDTO
-    {
-        public int Id { get; set; }
-        public required string KullaniciAdi { get; set; }
-        public required string AdSoyad { get; set; }
-        public required string Rol { get; set; }
-        public string? Sifre { get; set; }
     }
 }

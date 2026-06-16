@@ -2,7 +2,6 @@
 using StokTakip_Core_API.Data;
 using StokTakip_Core_API.Interfaces;
 using StokTakip_Core_API.Models;
-using System.Xml.Linq;
 
 namespace StokTakip_Core_API.Repository
 {
@@ -15,14 +14,20 @@ namespace StokTakip_Core_API.Repository
             _context = context;
         }
 
-        public async Task<ICollection<Urun>> GetUrunler()
+        public async Task<ICollection<Urun>> GetUrunler(int sayfa = 1, int boyut = 50)
         {
-            return await _context.Urunler.Include(u => u.Kategori).ToListAsync();
+            return await _context.Urunler
+                .AsNoTracking()
+                .Include(u => u.Kategori)
+                .OrderBy(u => u.UrunId)
+                .Skip((sayfa - 1) * boyut)
+                .Take(boyut)
+                .ToListAsync();
         }
 
         public async Task<bool> UrunEkle(Urun urun)
         {
-            await _context.Urunler.AddAsync(urun);
+            _context.Urunler.Add(urun);
             return await _context.SaveChangesAsync() > 0;
         }
 
@@ -39,7 +44,8 @@ namespace StokTakip_Core_API.Repository
 
         public async Task<bool> UrunSil(Urun urun)
         {
-            _context.Urunler.Remove(urun);
+            urun.IsDeleted = true;
+            _context.Urunler.Update(urun);
             return await _context.SaveChangesAsync() > 0;
         }
 

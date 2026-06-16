@@ -1,8 +1,9 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using StokTakip_Core_API.Data;
+using StokTakip_Core_API.DTOs;
 using StokTakip_Core_API.Interfaces;
 using StokTakip_Core_API.Models;
+using StokTakip_Core_API.Services;
 
 namespace StokTakip_Core_API.Controllers
 {
@@ -12,139 +13,122 @@ namespace StokTakip_Core_API.Controllers
     public class UrunlerController : ControllerBase
     {
         private readonly IUrunRepository _urunRepository;
-        private readonly stokTakipContext _context;
+        private readonly IAuditLogService _auditLogService;
+        private readonly IDateTimeProvider _dateTimeProvider;
+        private readonly IKategoriRepository _kategoriRepository;
 
-        public UrunlerController(IUrunRepository urunRepository, stokTakipContext context)
+        public UrunlerController(IUrunRepository urunRepository, IAuditLogService auditLogService, IDateTimeProvider dateTimeProvider, IKategoriRepository kategoriRepository)
         {
             _urunRepository = urunRepository;
-            _context = context;
-        }
-
-        private async Task LogOlustur(string islemTipi, string detay)
-        {
-            var aktifKullaniciAdi = User.Identity?.Name;
-            var islemYapanAdSoyad = "Sistem";
-
-            if (!string.IsNullOrEmpty(aktifKullaniciAdi))
-            {
-                var kullanici = _context.Kullanicilar.FirstOrDefault(k => k.KullaniciAdi == aktifKullaniciAdi);
-                islemYapanAdSoyad = !string.IsNullOrWhiteSpace(kullanici?.AdSoyad) ? kullanici.AdSoyad : aktifKullaniciAdi;
-            }
-
-            var log = new IslemGecmisi
-            {
-                IslemTarihi = DateTime.UtcNow.AddHours(3),
-                Kullanici = islemYapanAdSoyad,
-                IslemTipi = islemTipi,
-                Detay = detay
-            };
-
-            _context.IslemGecmisi.Add(log);
-            await _context.SaveChangesAsync();
+            _auditLogService = auditLogService;
+            _dateTimeProvider = dateTimeProvider;
+            _kategoriRepository = kategoriRepository;
         }
 
         [HttpGet]
-        public async Task<IActionResult> GetUrunler()
+        public async Task<IActionResult> GetUrunler([FromQuery] int sayfa = 1, [FromQuery] int boyut = 50)
         {
-            var urunlerListesi = await _urunRepository.GetUrunler();
+            sayfa = sayfa < 1 ? 1 : Math.Min(sayfa, 1000);
+            boyut = boyut < 1 ? 10 : Math.Min(boyut, 100);
 
-            var donulecekDTO = urunlerListesi.Select(u => new DTOs.UrunEkleDTO
+            var urunler = await _urunRepository.GetUrunler(sayfa, boyut);
+
+            var sonuc = urunler.Select(u => new
             {
-                UrunID = u.UrunId,
-                UrunAdi = u.UrunAdi,
-                BirimFiyat = u.BirimFiyati,
-                StokMiktari = u.StokAdedi,
-                Konum = u.Konum,
-                KategoriAdi = u.Kategori != null ? u.Kategori.KategoriAdi : "Kategorisiz"
-            }).ToList();
+                u.UrunId,
+                u.UrunAdi,
+                KategoriAdi = u.Kategori?.KategoriAdi ?? "Kategorisiz",
+                u.BirimFiyati,
+                u.StokAdedi,
+                u.Konum
+            });
 
-            return Ok(donulecekDTO);
+            return Ok(sonuc);
+        }
+
+        [HttpGet("{id}")]
+        public async Task<IActionResult> GetUrun(int id)
+        {
+            var urun = await _urunRepository.GetUrunById(id);
+            if (urun == null) return NotFound();
+
+            return Ok(new
+            {
+                urun.UrunId,
+                urun.UrunAdi,
+                urun.KategoriID,
+                urun.BirimFiyati,
+                urun.StokAdedi,
+                urun.Konum
+            });
         }
 
         [HttpPost]
-        public async Task<IActionResult> UrunEkle([FromBody] DTOs.UrunEkleDTO yeniUrunDTO)
+        [Authorize(Roles = "Admin,Yonetici")]
+        public async Task<IActionResult> UrunEkle([FromBody] UrunEkleDTO dto)
         {
-            var eklenecekUrun = new Models.Urun
+            var kategori = await _kategoriRepository.GetKategoriById(dto.KategoriID);
+            if (kategori == null) return BadRequest(new { Mesaj = "Belirtilen kategori bulunamadı." });
+
+            var urun = new Urun
             {
-                UrunAdi = yeniUrunDTO.UrunAdi,
-                BirimFiyati = yeniUrunDTO.BirimFiyat,
-                StokAdedi = yeniUrunDTO.StokMiktari,
-                KategoriID = yeniUrunDTO.KategoriID,
-                Konum = yeniUrunDTO.Konum,
-                EklenmeTarihi = DateTime.UtcNow.AddHours(3)
+                UrunAdi = dto.UrunAdi,
+                KategoriID = dto.KategoriID,
+                BirimFiyati = dto.BirimFiyati,
+                StokAdedi = dto.StokAdedi,
+                Konum = dto.Konum,
+                EklenmeTarihi = _dateTimeProvider.Now,
+                IsDeleted = false
             };
 
-            bool kaydedildiMi = await _urunRepository.UrunEkle(eklenecekUrun);
+            var basarili = await _urunRepository.UrunEkle(urun);
+            if (!basarili) return BadRequest("Ürün kaydedilirken bir hata oluştu.");
 
-            if (kaydedildiMi)
-            {
-                await LogOlustur("Ürün Ekleme", $"{eklenecekUrun.UrunAdi} sisteme eklendi. Fiyat: {eklenecekUrun.BirimFiyati}, Stok: {eklenecekUrun.StokAdedi}");
-                return Ok(new { Mesajlar = "OK!", urun = eklenecekUrun });
-            }
-            return BadRequest(new { Mesajlar = "Hata! Ürün kaydedilemedi." });
+            await _auditLogService.LogOlusturAsync("Ürün Ekleme", $"'{dto.UrunAdi}' eklendi.");
+
+            return CreatedAtAction(nameof(GetUrun), new { id = urun.UrunId }, urun);
         }
 
         [HttpPut("{id}")]
-        public async Task<IActionResult> UrunGuncelle(int id, [FromBody] DTOs.UrunEkleDTO guncelUrunDTO)
+        [Authorize(Roles = "Admin,Yonetici")]
+        public async Task<IActionResult> UrunGuncelle(int id, [FromBody] UrunGuncelleDTO dto)
         {
-            var guncellenecekUrun = await _urunRepository.GetUrunById(id);
+            var kategori = await _kategoriRepository.GetKategoriById(dto.KategoriID);
+            if (kategori == null) return BadRequest(new { Mesaj = "Belirtilen kategori bulunamadı." });
 
-            if (guncellenecekUrun == null)
-                return NotFound(new { mesaj = "Güncellenecek ürün bulunamadı!" });
+            var urun = await _urunRepository.GetUrunById(id);
+            if (urun == null) return NotFound();
 
-            var degisiklikler = new List<string>();
+            urun.UrunAdi = dto.UrunAdi;
+            urun.KategoriID = dto.KategoriID;
+            urun.BirimFiyati = dto.BirimFiyati;
+            urun.Konum = dto.Konum;
 
-            if (guncellenecekUrun.BirimFiyati != guncelUrunDTO.BirimFiyat)
-                degisiklikler.Add($"Fiyat: {guncellenecekUrun.BirimFiyati} ➔ {guncelUrunDTO.BirimFiyat} TL");
+            var basarili = await _urunRepository.UrunGuncelle(urun);
+            if (!basarili) return BadRequest("Ürün güncellenemedi.");
 
-            if (guncellenecekUrun.StokAdedi != guncelUrunDTO.StokMiktari)
-                degisiklikler.Add($"Stok: {guncellenecekUrun.StokAdedi} ➔ {guncelUrunDTO.StokMiktari}");
+            await _auditLogService.LogOlusturAsync("Ürün Güncelleme", $"'{urun.UrunAdi}' güncellendi.");
 
-            if (guncellenecekUrun.Konum != guncelUrunDTO.Konum)
-                degisiklikler.Add($"Konum: {guncellenecekUrun.Konum} ➔ {guncelUrunDTO.Konum}");
-
-            string logDetayi = degisiklikler.Any()
-                ? $"'{guncellenecekUrun.UrunAdi}' güncellendi. Değişenler: {string.Join(", ", degisiklikler)}"
-                : $"'{guncellenecekUrun.UrunAdi}' güncellendi ama hiçbir değer değiştirilmedi.";
-
-            guncellenecekUrun.UrunAdi = guncelUrunDTO.UrunAdi;
-            guncellenecekUrun.BirimFiyati = guncelUrunDTO.BirimFiyat;
-            guncellenecekUrun.StokAdedi = guncelUrunDTO.StokMiktari;
-            guncellenecekUrun.KategoriID = guncelUrunDTO.KategoriID;
-            guncellenecekUrun.Konum = guncelUrunDTO.Konum;
-
-            bool guncellendiMi = await _urunRepository.UrunGuncelle(guncellenecekUrun);
-
-            if (guncellendiMi)
-            {
-                await LogOlustur("Ürün Güncelleme", logDetayi);
-                return Ok(new { mesaj = "OK!", urun = guncellenecekUrun });
-            }
-            return BadRequest(new { mesaj = "Hata! Ürün güncellenemedi." });
+            return NoContent();
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Admin")]
         public async Task<IActionResult> UrunSil(int id)
         {
-            bool stokHareketiVarMi = await _urunRepository.UrununStokHareketiVarMi(id);
+            var urun = await _urunRepository.GetUrunById(id);
+            if (urun == null) return NotFound();
 
-            if (stokHareketiVarMi)
-                return BadRequest(new { mesaj = "Bu ürünün stok geçmişi bulunduğu için sistemden kalıcı olarak silinemez." });
+            if (urun.StokAdedi > 0)
+                return BadRequest($"Bu üründen stokta {urun.StokAdedi} adet mevcut. Silmeden önce stok sıfırlanmalıdır.");
 
-            var silinecekUrun = await _urunRepository.GetUrunById(id);
+            urun.IsDeleted = true;
+            var basarili = await _urunRepository.UrunGuncelle(urun);
+            if (!basarili) return BadRequest("Silme işlemi gerçekleştirilemedi.");
 
-            if (silinecekUrun == null)
-                return NotFound(new { mesaj = "Silinmek istenen ürün yok." });
+            await _auditLogService.LogOlusturAsync("Ürün Silme", $"'{urun.UrunAdi}' sistemden kaldırıldı.");
 
-            string silinenUrunAdi = silinecekUrun.UrunAdi;
-            bool silindiMi = await _urunRepository.UrunSil(silinecekUrun);
-
-            if (silindiMi)
-            {
-                await LogOlustur("Ürün Silme", $"'{silinenUrunAdi}' adlı ürün silindi.");
-                return Ok(new { mesaj = "Ürün sistemden silindi" });
-            }
-            return BadRequest(new { mesaj = "Hata! Ürün silinemedi." });
+            return NoContent();
         }
     }
 }
