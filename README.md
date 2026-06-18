@@ -46,8 +46,8 @@ Projeyi kendi ortamınızda çalıştırmak için aşağıdaki adımları izleye
 
 ### 2. Projeyi Klonlayın
 ```bash
-git clone https://github.com/kullaniciadin/stok-takip-api.git
-cd stok-takip-api
+git clone https://github.com/MetinOktayOzcan/StokTakip-Core-API.git
+cd StokTakip-Core-API
 ```
 
 ### 3. Ortam Değişkenleri (Environment Variables) Konfigürasyonu
